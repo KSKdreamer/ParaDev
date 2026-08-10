@@ -1,0 +1,13 @@
+DEBUG_generic_tank_organization = {
+    include = generic_tank_organization
+    allowed = {
+        is_debug = yes
+    }
+}
+
+DEBUG_generic_aircraft_organization = {
+    include = generic_aircraft_organization
+    allowed = {
+        is_debug = yes
+    }
+}

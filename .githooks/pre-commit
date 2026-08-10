@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(git rev-parse --show-toplevel)"
+cd "${ROOT}"
+export REPO_PYTHON_PREFERENCE=uv-first
+
+bash scripts/sync-env.bash --no-heavenbase
+git add README.md src/paradev/resources/README.md pyproject.toml environment-dev.yml uv.lock poetry.lock
+
+bash scripts/flake.bash --all
+
+if ! git diff --quiet -- src scripts demos; then
+    echo "error: formatting changed files. Review and re-stage them, then commit again." >&2
+    exit 1
+fi

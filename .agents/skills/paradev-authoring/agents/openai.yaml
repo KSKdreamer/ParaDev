@@ -1,0 +1,4 @@
+interface:
+  display_name: "ParaDev Authoring"
+  short_description: "Create and edit ParaDev modules and collections"
+  default_prompt: "Use $paradev-authoring to safely create or edit modules and collections in my ParaDev project."

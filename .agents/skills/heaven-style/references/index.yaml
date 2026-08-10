@@ -1,0 +1,792 @@
+skill: heaven-style
+version: 0.1.1.5
+description: Heaven-style code and architecture guide for Python-first repos in the
+    HeavenBase lineage. Use when writing, reviewing, designing architecture, refactoring,
+    or aligning tests/docs for downstream packages, HeavenBase maintenance, or shared
+    infrastructure code; enforce HeavenBase utilities over stdlib, CM_HVNB config
+    for shared infrastructure, modern type annotations, canonical OOP vocabulary,
+    short names, raise_mismatch, SQL/resource discipline, architecture-review artifacts,
+    code-review artifacts, and repo lint/test gates.
+generated_at: '2026-08-10T01:53:19Z'
+generator: scripts/index.py
+references:
+    rules:
+    -   id: overview
+        title: Rule overview
+        enabled: true
+        blocking: true
+        order: 1
+        category: overview
+        keywords:
+        - which rule
+        - what rules apply
+        - rule map
+        - style overview
+        - start here
+        description: Use when deciding which heaven-style rule files apply to a task.
+        path: references/rules/overview.md
+    -   id: util
+        title: Utility layer
+        enabled: true
+        blocking: true
+        order: 10
+        category: code-quality
+        keywords:
+        - json
+        - yaml
+        - pickle
+        - pathlib
+        - os.path
+        - subprocess
+        - shutil
+        - hashlib
+        - logging
+        - print
+        - open
+        description: Use when code touches paths, files, serialization, shell commands,
+            hashing, logging, temp files, IDs, or stdlib utility imports.
+        path: references/rules/code/util.md
+    -   id: config
+        title: Config and resources
+        enabled: true
+        blocking: true
+        order: 20
+        category: code-quality
+        keywords:
+        - hard-coded
+        - magic number
+        - literals
+        - CM_HVNB
+        - resources
+        - default
+        - model
+        - timeout
+        - batch size
+        description: Use when code introduces defaults, tunables, prompt or resource
+            paths, model/backend settings, or disputed literals.
+        path: references/rules/code/config.md
+    -   id: types
+        title: Type annotations
+        enabled: true
+        blocking: true
+        order: 25
+        category: code-quality
+        keywords:
+        - Dict
+        - List
+        - Optional
+        - Union
+        - pipe types
+        - builtins
+        - TypedDict
+        - Self
+        description: Use when adding or reviewing type annotations, public signatures,
+            Python-version compatibility, or schema-shaped data.
+        path: references/rules/code/types.md
+    -   id: oop
+        title: OOP vocabulary
+        enabled: true
+        blocking: true
+        order: 30
+        category: code-quality
+        keywords:
+        - serialize
+        - as_dict
+        - fetch
+        - retrieve
+        - from_json
+        - CRUD
+        - collection
+        - engine
+        - preset
+        - provider
+        - backend
+        description: Use when designing public objects, stores, clients, CRUD/KV APIs,
+            batch APIs, engines, specs, configs, plans, or presets.
+        path: references/rules/code/oop.md
+    -   id: model
+        title: Mental model
+        enabled: true
+        blocking: true
+        order: 35
+        category: code-quality
+        keywords:
+        - api surface
+        - class count
+        - function count
+        - DSL
+        - user model
+        - interface design
+        - abstraction
+        - constructor flags
+        - OOP front door
+        description: Use when adding public classes or functions, designing a user-facing
+            surface, choosing method versus free function, adding constructor flags,
+            or proposing a DSL.
+        path: references/rules/code/model.md
+    -   id: name
+        title: Names
+        enabled: true
+        blocking: true
+        order: 40
+        category: code-quality
+        keywords:
+        - rename
+        - naming
+        - glossary
+        - abbreviations
+        - snake_case
+        - terse
+        - variable name
+        description: Use when adding or reviewing modules, public symbols, abbreviations,
+            predicates, variable names, or glossary terms.
+        path: references/rules/code/name.md
+    -   id: py
+        title: Python shape
+        enabled: true
+        blocking: true
+        order: 50
+        category: code-quality
+        keywords:
+        - comprehension
+        - ternary
+        - guard clause
+        - compact python
+        - dict get
+        - nested loop
+        - early return
+        description: Use when code shape is verbose, deeply nested, unclear, or depends
+            on fallback/control-flow semantics.
+        path: references/rules/code/py.md
+    -   id: clean
+        title: Helper cleanliness
+        enabled: true
+        blocking: true
+        order: 55
+        category: code-quality
+        keywords:
+        - helper function
+        - temporary helper
+        - wrapper
+        - small function
+        - code cleanliness
+        - abstraction
+        description: Use when adding helper functions, wrappers, temporary transforms,
+            adapters, or deciding inline logic versus shared utilities.
+        path: references/rules/code/clean.md
+    -   id: error
+        title: Errors
+        enabled: true
+        blocking: true
+        order: 60
+        category: code-quality
+        keywords:
+        - try except
+        - logging
+        - raise
+        - print debug
+        - raise_mismatch
+        - unsupported value
+        - swallowed error
+        description: Use when validating supported values, handling exceptions, logging
+            failures, catching broadly, or returning fallbacks.
+        path: references/rules/code/error.md
+    -   id: sql
+        title: SQL
+        enabled: true
+        blocking: true
+        order: 70
+        category: code-quality
+        keywords:
+        - sqlalchemy
+        - embedded sql
+        - f-string sql
+        - orm
+        - ddl
+        - migration
+        - raw sql
+        description: Use when code touches database queries, raw SQL, migrations,
+            DDL, binds, SQLAlchemy, ORM, or SQL resources.
+        path: references/rules/code/sql.md
+    -   id: compat
+        title: Compatibility shims
+        enabled: true
+        blocking: true
+        order: 90
+        category: code-quality
+        keywords:
+        - deprecated
+        - shim
+        - v1 v2
+        - warnings.warn
+        - backward compatibility
+        - alias
+        - migration
+        description: Use when renaming APIs, changing config schemas, adding aliases,
+            preserving old behavior, or proposing migration/deprecation shims.
+        path: references/rules/code/compat.md
+    -   id: environment
+        title: Agent environment and commands
+        enabled: true
+        blocking: true
+        order: 95
+        category: project
+        keywords:
+        - rtk
+        - uv
+        - AGENTS.md
+        - scripts/_env.bash
+        - bash wrapper
+        - python path
+        - venv
+        - sync-env.bash
+        - sync wrapper
+        - command prefix
+        - coding agent
+        description: Use when running shell commands, choosing Python/uv executables,
+            adding Bash wrappers, or diagnosing wrong-environment failures for coding
+            agents.
+        path: references/rules/project/environment.md
+    -   id: format
+        title: Imports and formatting
+        enabled: true
+        blocking: true
+        order: 100
+        category: project
+        keywords:
+        - import order
+        - line length
+        - flake
+        - black
+        - repo script
+        - wrapper
+        description: Use when running or reviewing formatters, linters, import order,
+            line length, generated compatibility files, or command wrappers.
+        path: references/rules/project/format.md
+    -   id: test
+        title: Tests and examples
+        enabled: true
+        blocking: true
+        order: 110
+        category: project
+        keywords:
+        - pytest
+        - unit test
+        - fast test
+        - full test
+        - test marker
+        - runnable example
+        - demo script
+        - coverage
+        - happy path
+        - edge case
+        - error path
+        description: Use when adding or reviewing behavior tests, runnable examples,
+            smoke checks, integration evidence, or LLM/provider tests.
+        path: references/rules/project/test.md
+    -   id: docs
+        title: Docs and generated content
+        enabled: true
+        blocking: false
+        order: 120
+        category: project
+        keywords:
+        - README
+        - generated docs
+        - doc sync
+        - mintlify
+        - docs json
+        - architecture docs
+        - translation
+        - examples
+        description: Use when public behavior, README content, user-facing docs, generated
+            docs, Mintlify pages, sibling docs repos, or translation staleness changes.
+        path: references/rules/project/docs.md
+    -   id: extension
+        title: Extension points
+        enabled: true
+        blocking: false
+        order: 130
+        category: project
+        keywords:
+        - plugin
+        - extension api
+        - registry
+        - capability registration
+        - layering
+        - provider
+        - backend
+        description: Use when adding providers, backends, handlers, plugins, capabilities,
+            registries, planners, or extension APIs.
+        path: references/rules/project/extension.md
+    -   id: review
+        title: Review checklist
+        enabled: true
+        blocking: true
+        order: 200
+        category: project
+        keywords:
+        - pr gate
+        - code review
+        - style review
+        - inline comments
+        - findings
+        - approval
+        - review criteria
+        description: Use for PR, diff, module, branch, or Linear review, severity-marked
+            findings, review artifacts, follow-up, or explicit waivers.
+        path: references/rules/project/review.md
+    workflows:
+    -   id: workflow-architect
+        title: Architect workflow
+        enabled: true
+        audience: architect
+        keywords:
+        - architecture plan
+        - architecture review
+        - periodic architecture review
+        - agile design
+        - design smells
+        - dependency review
+        - module design
+        - refactor plan
+        - goals roadmap
+        - api standard table
+        - docs cleanup
+        - organize docs
+        - short-term goals
+        - mid-term goals
+        - long-term goals
+        - implementation plan
+        - design doc
+        description: Use when organizing docs, designing or reviewing architecture,
+            drafting refactor plans, updating goals, or producing step-by-step execution
+            plans without implementing code.
+        path: references/workflows/architect.md
+    -   id: workflow-developer
+        title: Developer workflow
+        enabled: true
+        audience: developer
+        keywords:
+        - advanced usage
+        - large refactor
+        - planning
+        - architecture review
+        - read all rules
+        - public api design
+        description: Use when planning broad work, refactoring shared surfaces, designing
+            public APIs, resolving rule tradeoffs, or needing the full Heaven Style
+            rule set.
+        path: references/workflows/developer.md
+    -   id: workflow-editor
+        title: Editor workflow
+        enabled: true
+        audience: editor
+        keywords:
+        - maintain heaven-style
+        - edit skill
+        - install skill
+        - update rules
+        - update tasks
+        - update failures
+        - update skill version
+        description: Use when maintaining this heaven-style skill, changing rules/tasks/failures/workflows,
+            regenerating indexes, syncing reference assets, or aligning versions.
+        path: references/workflows/editor.md
+    tasks:
+    -   id: code
+        task_kind: code
+        status: active
+        enabled: true
+        order: 10
+        keywords:
+        - implement feature
+        - fix bug
+        - modify code
+        - refactor code
+        - add tests
+        - update docs
+        - linear issue
+        - stabilize
+        triggers:
+        - implement
+        - fix
+        - code
+        - refactor
+        - add feature
+        - change behavior
+        - stabilize
+        - TAL
+        description: Use when implementing Heaven-style features, fixes, refactors,
+            tests, docs, or stabilization work.
+        related_rules:
+        - overview
+        - util
+        - config
+        - types
+        - oop
+        - model
+        - name
+        - py
+        - clean
+        - error
+        - sql
+        - compat
+        - environment
+        - format
+        - test
+        - docs
+        - extension
+        path: references/tasks/code.md
+    -   id: code-review
+        task_kind: code-review
+        status: active
+        enabled: true
+        order: 20
+        keywords:
+        - review code
+        - review pr
+        - review branch
+        - review recent changes
+        - style review
+        - quality review
+        - linear review
+        triggers:
+        - review
+        - code review
+        - check this pr
+        - review TAL
+        - review branch
+        - review changes
+        description: Use when reviewing code changes, modules, branches, PRs, recent
+            diffs, or Linear-linked review work.
+        related_rules:
+        - overview
+        - review
+        - util
+        - config
+        - types
+        - oop
+        - model
+        - name
+        - py
+        - clean
+        - error
+        - sql
+        - compat
+        - environment
+        - format
+        - test
+        - docs
+        - extension
+        path: references/tasks/code-review.md
+    -   id: doc-sync
+        task_kind: doc-sync
+        status: active
+        enabled: true
+        order: 30
+        keywords:
+        - sync docs
+        - update docs
+        - heavenbase docs
+        - mintlify docs
+        - docs json
+        - documentation task
+        triggers:
+        - doc sync
+        - update documentation
+        - sync HeavenBase-docs
+        - update Mintlify
+        - docs out of date
+        description: Use when syncing English code-facing docs, Mintlify MDX pages,
+            navigation, or sibling docs repos with current implementation.
+        related_rules:
+        - overview
+        - docs
+        - test
+        - config
+        - util
+        - model
+        - extension
+        path: references/tasks/doc-sync.md
+    -   id: doc-trans
+        task_kind: doc-trans
+        status: active
+        enabled: true
+        order: 32
+        keywords:
+        - translate docs
+        - zh docs
+        - chinese translation
+        - batch translate
+        - re-translate
+        - doc translation
+        - line-aligned translation
+        triggers:
+        - translate
+        - translation
+        - zh doc
+        - chinese docs
+        - batch translate
+        - re-translate
+        - line-by-line translation
+        - doc-trans
+        description: Use when translating or re-translating English MDX docs into
+            line-aligned Chinese pages.
+        related_rules:
+        - overview
+        - docs
+        - test
+        path: references/tasks/doc-trans.md
+    -   id: test-compress
+        task_kind: test-compress
+        status: active
+        enabled: true
+        order: 34
+        keywords:
+        - test compression
+        - compress tests
+        - prune tests
+        - pytest cleanup
+        - legacy tests
+        - fast tests
+        - full tests
+        - test markers
+        - suite cleanup
+        triggers:
+        - test-compress
+        - compress tests
+        - prune tests
+        - cleanup tests
+        - reduce tests
+        - slim tests
+        - test suite cleanup
+        description: Use when auditing and slimming a pytest suite by removing oddly
+            specific, legacy, low-value, brittle, or redundant tests while preserving
+            meaningful behavior coverage.
+        related_rules:
+        - overview
+        - test
+        - clean
+        - model
+        - compat
+        - environment
+        - format
+        - docs
+        - review
+        path: references/tasks/test-compress.md
+    -   id: code-explain
+        task_kind: code-explain
+        status: active
+        enabled: true
+        order: 35
+        keywords:
+        - explain code
+        - explain module
+        - architecture walkthrough
+        - data flow
+        - how does this work
+        - compare changes
+        triggers:
+        - explain
+        - walkthrough
+        - how does
+        - architecture
+        - dataflow
+        - compare code
+        - module question
+        description: Use when explaining HeavenBase architecture, modules, data flow,
+            feature behavior, or code changes.
+        related_rules:
+        - overview
+        - docs
+        - model
+        - oop
+        - extension
+        - clean
+        path: references/tasks/code-explain.md
+    -   id: arch-design
+        task_kind: arch-design
+        status: active
+        enabled: true
+        order: 38
+        keywords:
+        - architecture design
+        - architecture review
+        - periodic architecture review
+        - module design
+        - refactor plan
+        - dependency review
+        - agile design
+        - SOLID
+        - design smells
+        - design doc
+        triggers:
+        - arch-design
+        - architecture design
+        - design architecture
+        - architecture review
+        - design review
+        - periodic architecture review
+        - module design
+        - refactor plan
+        - ADR
+        description: Use when designing or reviewing architecture, module boundaries,
+            dependency direction, extension seams, refactor plans, or periodic architecture
+            health using agile design principles before implementation.
+        related_rules:
+        - overview
+        - docs
+        - review
+        - model
+        - oop
+        - clean
+        - extension
+        - compat
+        - test
+        - environment
+        path: references/tasks/arch-design.md
+    -   id: skill-update
+        task_kind: skill-update
+        status: active
+        enabled: true
+        order: 40
+        keywords:
+        - update heaven-style
+        - maintain skill
+        - refresh skill
+        - update rules
+        - update tasks
+        - skill version
+        triggers:
+        - skill-update
+        - update heaven-style
+        - stabilize heaven-style
+        - TAL-215
+        - TAL-231
+        description: Use when maintaining heaven-style rules, tasks, workflows, scripts,
+            indexes, versions, or failure patterns.
+        related_rules:
+        - overview
+        - util
+        - config
+        - docs
+        - review
+        - environment
+        - format
+        - test
+        - clean
+        path: references/tasks/skill-update.md
+    -   id: manager
+        task_kind: manager
+        status: active
+        enabled: true
+        order: 50
+        keywords:
+        - project manager
+        - status report
+        - track tasks
+        - triage linear
+        - triage github
+        - orchestrate agents
+        - project status
+        triggers:
+        - manager
+        - project status
+        - what's ongoing
+        - stale tasks
+        - next steps
+        - orchestrate
+        - track Linear
+        - track GitHub
+        description: Use when tracking GitHub/Linear status, stale work, recent activity,
+            next steps, or multi-agent coordination.
+        related_rules:
+        - overview
+        - review
+        - docs
+        - test
+        path: references/tasks/manager.md
+    failures:
+    -   id: failure-env
+        title: Environment and PATH failures
+        enabled: true
+        order: 10
+        keywords:
+        - wrong python
+        - uv
+        - command not found
+        - PATH
+        - module not found
+        - system error
+        - venv
+        description: Use when commands fail because the wrong shell, Python, uv environment,
+            or PATH is active.
+        path: references/failures/env.md
+    -   id: failure-network-proxy
+        title: Network and proxy failures
+        enabled: true
+        order: 20
+        keywords:
+        - network timeout
+        - proxy
+        - VPN
+        - HTTP_PROXY
+        - HTTPS_PROXY
+        - connection refused
+        - TLS
+        description: Use when CLI/API/network commands fail while local VPN or proxy
+            settings may be active.
+        path: references/failures/network-proxy.md
+    -   id: failure-auth-secrets
+        title: Auth, MCP, and secret lookup failures
+        enabled: true
+        order: 30
+        keywords:
+        - Linear auth expired
+        - Tavily auth failed
+        - cannot find api key
+        - missing token
+        - MCP failed
+        - GraphQL API
+        - LLM provider key
+        description: Use when MCP tools, CLIs, Linear/Tavily, GraphQL, or LLM providers
+            fail because auth, tokens, or API keys are missing or expired.
+        path: references/failures/auth-secrets.md
+    -   id: failure-linear-pressure
+        title: Linear issue and comment pressure failures
+        enabled: true
+        order: 40
+        keywords:
+        - Linear issue limit
+        - too many Linear issues
+        - cannot create issue
+        - project full
+        - Done issues
+        - too many comments
+        - comment spam
+        - rolling comment
+        description: Use when Linear cannot create more issues, a project has too
+            many Done issues, or an issue has too many routine comments.
+        path: references/failures/linear-pressure.md
+scripts:
+-   path: scripts/index.py
+    name: index
+    description: Regenerate references/index.yaml from skill metadata and bundled
+        resources.
+-   path: scripts/install.py
+    name: install
+    description: Install heaven-style globally, mirror optional checkouts, and refresh
+        assets.
+-   path: scripts/scan.py
+    name: scan
+    description: Scan Python files for stdlib imports banned by heaven-style util
+        rule.
+-   path: scripts/sync.py
+    name: sync
+    description: Clone or refresh the HeavenBase reference tree under assets/.
+assets:
+-   path: assets/default-glossary.md
+    kind: file
+-   path: assets/REFERENCE.md
+    kind: file

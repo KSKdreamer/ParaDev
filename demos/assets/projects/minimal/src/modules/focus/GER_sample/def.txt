@@ -1,0 +1,4 @@
+focus = {
+	id = GER_sample
+	cost = 10
+}

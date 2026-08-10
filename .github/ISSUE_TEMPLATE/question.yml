@@ -1,0 +1,31 @@
+name: Question
+description: Ask a question or request clarification
+title: "[Question] "
+labels:
+  - question
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ask a question about usage, setup, design, or project direction. For confirmed defects, use **Bug Report** instead.
+  - type: textarea
+    id: question
+    attributes:
+      label: Question
+      description: What do you want to know?
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: What have you already tried or read?
+    validations:
+      required: false
+  - type: checkboxes
+    id: docs_checked
+    attributes:
+      label: Docs checked
+      options:
+        - label: I checked README and relevant docs before opening this issue
+          required: false

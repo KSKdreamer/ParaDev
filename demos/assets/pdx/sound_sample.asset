@@ -1,0 +1,15 @@
+soundeffect = {
+	name = "paradev_sample_click"
+	sounds = {
+		sound = {
+			file = "sound/interface/paradev_sample_click.wav"
+			volume = 0.5
+		}
+	}
+}
+
+category = {
+	name = "paradev_sample"
+	gain = 0.75
+	priority >= 1
+}

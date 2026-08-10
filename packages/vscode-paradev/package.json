@@ -1,0 +1,96 @@
+{
+  "name": "vscode-paradev",
+  "displayName": "ParaDev PDX",
+  "description": "VS Code language client for ParaDev PDX projects.",
+  "version": "0.1.0",
+  "private": true,
+  "publisher": "paradev",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:paradox-pdx",
+    "workspaceContains:paradev.yaml"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "paradev.restartLsp",
+        "title": "ParaDev: Restart PDX Language Server"
+      }
+    ],
+    "configuration": {
+      "title": "ParaDev",
+      "properties": {
+        "paradev.lsp.command": {
+          "type": "string",
+          "default": "paradev",
+          "description": "Executable used to start the ParaDev PDX language server."
+        },
+        "paradev.lsp.args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "lsp",
+            "serve"
+          ],
+          "description": "Arguments passed before extension-managed --project, --database, and --limit flags."
+        },
+        "paradev.lsp.database": {
+          "type": "string",
+          "default": "",
+          "description": "Optional HeavenBase catalog SQLite path for completion data."
+        },
+        "paradev.lsp.gameRoot": {
+          "type": "string",
+          "default": "",
+          "description": "Optional Hearts of Iron IV install path for built-in keyword completion data."
+        },
+        "paradev.lsp.completionLimit": {
+          "type": "number",
+          "default": 100,
+          "minimum": 1,
+          "description": "Maximum completion items requested from the ParaDev catalog."
+        }
+      }
+    },
+    "languages": [
+      {
+        "id": "paradox-pdx",
+        "aliases": [
+          "Paradox PDX",
+          "PDX"
+        ],
+        "extensions": [
+          ".pdx"
+        ],
+        "filenamePatterns": [
+          "**/src/modules/**/*.txt",
+          "**/src/collections/**/*.txt",
+          "**/common/**/*.txt",
+          "**/events/**/*.txt",
+          "**/history/**/*.txt"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/vscode": "^1.90.0",
+    "typescript": "^5.4.5"
+  }
+}

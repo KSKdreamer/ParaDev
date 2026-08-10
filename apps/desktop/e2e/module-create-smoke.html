@@ -1,0 +1,415 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>ParaDev Module Create Smoke</title>
+    <script>
+      (() => {
+        const projectRoot = "/workspace/projects/PIHC3";
+        const objectId = "IDEA_RENDERED_FRIENDSHIP";
+        const title = "Rendered Friendship Idea";
+        const project = {
+          id: "PIHC3",
+          project_id: "PIHC3",
+          title: "The Pony In The High Castle",
+          game: "hoi4",
+          root: projectRoot,
+          manifest: `${projectRoot}/paradev.yaml`,
+          source_roots: [`${projectRoot}/src`],
+          status: "ready"
+        };
+        const template = {
+          id: "pihc3:idea/basic",
+          title: "PIHC3 Basic Idea",
+          family: "idea",
+          source: "project",
+          args: {
+            title: { required: true, default: "", advanced: false },
+            description: { required: false, default: "", advanced: false },
+            category: { required: false, default: "country", advanced: true },
+            language: { required: false, default: "en", advanced: true },
+            cic: { required: false, default: 0, advanced: false, type: "number" },
+            modifier: { required: false, default: "", advanced: true, type: "text" }
+          },
+          files: ["meta.yaml", "def.txt", "main.loc"]
+        };
+
+        window.__PARADEV_E2E_EVENTS__ = [];
+        window.__PARADEV_E2E_STATE__ = {
+          applied: false,
+          objectId,
+          title,
+          appConfig: {
+            schema: "paradev.desktop.app-settings.v1"
+          }
+        };
+
+        function currentObjectId() {
+          return window.__PARADEV_E2E_STATE__.objectId || objectId;
+        }
+
+        function recordEvent(operation, args) {
+          window.__PARADEV_E2E_EVENTS__.push({ operation, args });
+          const root = document.documentElement;
+          root.dataset.paradevE2eCommandCount = String(window.__PARADEV_E2E_EVENTS__.length);
+          root.dataset.paradevE2eLastCommand = operation;
+          root.dataset.paradevE2eWriteCount = String(
+            window.__PARADEV_E2E_EVENTS__.filter((event) => event.operation === "module.draft" && event.args?.request?.write).length
+          );
+        }
+
+        function scaffoldPlan({ write = false, values = {} } = {}) {
+          const root = `${projectRoot}/src/modules/idea/${objectId}`;
+          const resolvedValues = Object.fromEntries(
+            Object.entries({
+              object_id: objectId,
+              family: "idea",
+              family_tag: "RENDERED_FRIENDSHIP",
+              module_id: `idea/${objectId}`,
+              title,
+              description: "Created by the rendered smoke bridge.",
+              category: "country",
+              language: "en",
+              cic: 0.02,
+              modifier: "",
+              ...values
+            }).map(([key, value]) => [key, String(value)])
+          );
+          return {
+            schema: "paradev.sdk.module_scaffold.v1",
+            project_id: "PIHC3",
+            template_id: template.id,
+            family: "idea",
+            object_id: objectId,
+            module_id: `idea/${objectId}`,
+            root,
+            source_root: `${projectRoot}/src`,
+            values: resolvedValues,
+            blocked: false,
+            written: write,
+            ...(write
+              ? {
+                  catalog_mutation: {
+                    schema: "paradev.hb.catalog-mutation.v1",
+                    status: "not_configured",
+                    code: "catalog.mutation.not_configured",
+                    database: `${projectRoot}/.paradev/catalog.sqlite3`
+                  }
+                }
+              : {}),
+            diagnostics: [],
+            files: ["meta.yaml", "def.txt", "main.loc"].map((name) => ({
+              path: `${root}/${name}`,
+              relative_path: `src/modules/idea/${objectId}/${name}`,
+              module_path: name,
+              action: "create"
+            }))
+          };
+        }
+
+        function browserPayload() {
+          const activeObjectId = currentObjectId();
+          const moduleRoot = `${projectRoot}/src/modules/idea/${activeObjectId}`;
+          const currentTitle = window.__PARADEV_E2E_STATE__.title || title;
+          const sourceRows = ["meta.yaml", "def.txt", "main.loc"].map((name) => ({
+            slot: name === "def.txt" ? "def" : name === "main.loc" ? "loc" : "meta",
+            name,
+            path: `${moduleRoot}/${name}`,
+            relative_path: `src/modules/idea/${activeObjectId}/${name}`,
+            extension: name.slice(name.lastIndexOf("."))
+          }));
+          const items = window.__PARADEV_E2E_STATE__.applied
+            ? [
+                {
+                  id: `module:idea/${activeObjectId}`,
+                  kind: "module",
+                  layout: "canonical",
+                  family_id: "ideas",
+                  family: "idea",
+                  object_id: activeObjectId,
+                  module_id: `idea/${activeObjectId}`,
+                  title: currentTitle,
+                  root: moduleRoot,
+                  relative_root: `src/modules/idea/${activeObjectId}`,
+                  source_count: sourceRows.length,
+                  sources: sourceRows
+                }
+              ]
+            : [];
+          return {
+            schema: "paradev.sdk.project-browser.v1",
+            project_id: "PIHC3",
+            title: "The Pony In The High Castle",
+            root: projectRoot,
+            profile: "hoi4",
+            filters: {},
+            families: [
+              {
+                id: "ideas",
+                family: "idea",
+                title: "Ideas",
+                visible: true,
+                item_count: items.length,
+                source_count: items.length ? 3 : 0,
+                layouts: ["canonical"]
+              }
+            ],
+            items,
+            diagnostics: []
+          };
+        }
+
+        function desktopState() {
+          return {
+            schema: "paradev.desktop.state.v1",
+            projects: [project],
+            active_project: project,
+            browser: browserPayload(),
+            templates: {
+              schema: "paradev.sdk.templates.v1",
+              project_id: "PIHC3",
+              profile: "hoi4",
+              source_roots: [
+                {
+                  path: `${projectRoot}/src`,
+                  relative_path: "src",
+                  default: true
+                }
+              ],
+              templates: [template]
+            },
+            diagnostics: []
+          };
+        }
+
+        const fallbackFetch = window.fetch.bind(window);
+        window.__PARADEV_RUNTIME_CONFIG__ = {
+          nativeBridgeBaseUrl: window.location.origin
+        };
+        window.fetch = async (input, init) => {
+          const request = new Request(input, init);
+          const url = new URL(request.url);
+          if (url.origin !== window.location.origin) {
+            return await fallbackFetch(input, init);
+          }
+          if (url.pathname === "/frontend-api/rest-request") {
+            return jsonResponse({
+              body: {
+                operationId: url.searchParams.get("operation_id"),
+                values: await request.json()
+              },
+              method: "POST",
+              path: "/e2e/frontend-operation",
+              query: {}
+            });
+          }
+          if (url.pathname === "/e2e/frontend-operation") {
+            const body = await request.json();
+            return jsonResponse(
+              await handleOperation(
+                body.operationId,
+                frontendOperationArgs(body.operationId, body.values ?? {})
+              )
+            );
+          }
+          if (url.pathname === "/desktop/state") {
+            return jsonResponse(await handleOperation("desktop.state"));
+          }
+          if (url.pathname === "/projects/browser") {
+            return jsonResponse(await handleOperation("projects.browser"));
+          }
+          if (url.pathname === "/projects/catalog") {
+            return jsonResponse(await handleOperation("projects.catalog"));
+          }
+          if (url.pathname === "/desktop/app-config") {
+            return jsonResponse(
+              await handleOperation(
+                request.method === "PUT"
+                  ? "desktop.app-config.write"
+                  : "desktop.app-config.read",
+                request.method === "PUT"
+                  ? { config: await request.json() }
+                  : {}
+              )
+            );
+          }
+          if (url.pathname === "/desktop/open-path") {
+            return jsonResponse(
+              await handleOperation("desktop.open-path", await request.json())
+            );
+          }
+          return await fallbackFetch(input, init);
+        };
+
+        function frontendOperationArgs(operationId, values) {
+          if (operationId === "module.draft") {
+            return {
+              request: {
+                familyId: values.family_id,
+                force: values.force,
+                objectId: values.object_id,
+                projectId: values.project_id,
+                projectRoot: values.path,
+                templateId: values.template_id,
+                values: values.values,
+                write: values.write
+              }
+            };
+          }
+          if (operationId === "project.draft_apply") {
+            return {
+              request: {
+                projectId: values.project_id,
+                projectRoot: values.path,
+                sourceEdits: values.source_edits,
+                sourceRemovals: values.source_removals,
+                sourceReplacements: values.source_replacements
+              }
+            };
+          }
+          if (operationId === "module.rename") {
+            return {
+              request: {
+                moduleId: values.module_id,
+                objectId: values.object_id,
+                projectId: values.project_id,
+                projectRoot: values.path,
+                sourceRoot: values.source_root,
+                title: values.title
+              }
+            };
+          }
+          if (operationId === "project.source_text") {
+            return {
+              projectId: values.project_id,
+              projectRoot: values.path,
+              sourcePath: values.source_path
+            };
+          }
+          return { request: values };
+        }
+
+        function jsonResponse(value) {
+          return new Response(JSON.stringify(value), {
+            headers: { "content-type": "application/json" },
+            status: 200
+          });
+        }
+
+        async function handleOperation(operation, args = {}) {
+            recordEvent(operation, args);
+            if (operation === "desktop.state") {
+              return desktopState();
+            }
+            if (operation === "projects.browser") {
+              return browserPayload();
+            }
+            if (operation === "projects.catalog") {
+              return {
+                schema: "paradev.hb.catalog-status.v1",
+                project_id: "PIHC3",
+                database: `${projectRoot}/.paradev/catalog.sqlite3`,
+                status: "missing",
+                code: "catalog.missing"
+              };
+            }
+            if (operation === "desktop.app-config.read") {
+              return window.__PARADEV_E2E_STATE__.appConfig;
+            }
+            if (operation === "desktop.app-config.write") {
+              window.__PARADEV_E2E_STATE__.appConfig = args.config ?? {};
+              return null;
+            }
+            if (operation === "module.draft") {
+              const request = args.request ?? {};
+              const plan = scaffoldPlan({ write: Boolean(request.write), values: request.values ?? {} });
+              if (request.write) {
+                window.__PARADEV_E2E_STATE__.applied = true;
+                window.__PARADEV_E2E_STATE__.objectId = plan.object_id || objectId;
+                window.__PARADEV_E2E_STATE__.title = plan.values.title || title;
+              }
+              return {
+                schema: "paradev.rest.module_draft.v1",
+                project_id: "PIHC3",
+                family_id: request.familyId ?? "ideas",
+                draft_id: `ideas:${objectId}`,
+                plan
+              };
+            }
+            if (operation === "project.draft_apply") {
+              const request = args.request ?? {};
+              for (const edit of request.sourceEdits ?? []) {
+                if (String(edit.path ?? "").endsWith("meta.yaml")) {
+                  const match = String(edit.text ?? "").match(/(?:title|label|name):\s*"([^"]+)"/);
+                  if (match) {
+                    window.__PARADEV_E2E_STATE__.title = match[1];
+                  }
+                }
+              }
+              const files = [
+                ...(request.sourceEdits ?? []).map((edit) => ({
+                  path: edit.path,
+                  relative_path: String(edit.path ?? "").replace(`${projectRoot}/`, ""),
+                  operation: "write_text",
+                  encoding: "utf-8"
+                })),
+                ...(request.sourceReplacements ?? []).map((replacement) => ({
+                  path: replacement.path,
+                  relative_path: String(replacement.path ?? "").replace(`${projectRoot}/`, ""),
+                  operation: "replace_bytes"
+                }))
+              ];
+              return {
+                schema: "paradev.rest.draft_apply.v1",
+                project_id: "PIHC3",
+                written: files.length > 0,
+                files
+              };
+            }
+            if (operation === "module.rename") {
+              const request = args.request ?? {};
+              const previousObjectId = currentObjectId();
+              const nextObjectId = request.objectId ?? previousObjectId;
+              window.__PARADEV_E2E_STATE__.objectId = nextObjectId;
+              return {
+                schema: "paradev.module.rename.v1",
+                project_id: "PIHC3",
+                previous_module_id: request.moduleId ?? `idea/${previousObjectId}`,
+                module_id: `idea/${nextObjectId}`,
+                family: "idea",
+                previous_root: `${projectRoot}/src/modules/idea/${previousObjectId}`,
+                root: `${projectRoot}/src/modules/idea/${nextObjectId}`,
+                previous_relative_path: `src/modules/idea/${previousObjectId}`,
+                relative_path: `src/modules/idea/${nextObjectId}`,
+                content_rewritten: false,
+                module: {}
+              };
+            }
+            if (operation === "project.source_text") {
+              const sourcePath = args.sourcePath ?? "";
+              if (sourcePath.endsWith("meta.yaml")) {
+                return `title: ${window.__PARADEV_E2E_STATE__.title || title}\n`;
+              }
+              if (sourcePath.endsWith("main.loc")) {
+                return `[en.${currentObjectId()}]\n${window.__PARADEV_E2E_STATE__.title || title}\n\n[zh.${currentObjectId()}]\n渲染友谊理念\n\n[en.${currentObjectId()}_desc]\nCreated by the rendered smoke bridge.\n`;
+              }
+              return `ideas = {\n  country = {\n    ${currentObjectId()} = {\n      modifier = {\n        industrial_capacity_factory = 0.02\n      }\n    }\n  }\n}\n`;
+            }
+            if (operation === "project.source_form") {
+              return null;
+            }
+            if (operation === "desktop.open-path") {
+              return null;
+            }
+            throw new Error(`Unhandled mock desktop operation: ${operation}`);
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

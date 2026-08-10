@@ -1,0 +1,40 @@
+name: Python Tests
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  test:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' &&
+        (contains(github.event.head_commit.message, '[major]') ||
+         contains(github.event.head_commit.message, '[release]') ||
+         contains(github.event.head_commit.message, '[merge]')))
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    env:
+      NO_COLOR: "1"
+      UV_PYTHON: ${{ matrix.python-version }}
+      UV_PYTHON_PREFERENCE: only-system
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - run: bash scripts/sync-env.bash --no-heavenbase
+      - name: Verify matrix interpreter
+        env:
+          EXPECTED_PYTHON: ${{ matrix.python-version }}
+        run: |
+          uv run python -c \
+            'import os, sys; expected=tuple(map(int, os.environ["EXPECTED_PYTHON"].split("."))); assert sys.version_info[:2] == expected, (sys.version, expected)'
+      - run: bash scripts/test.bash

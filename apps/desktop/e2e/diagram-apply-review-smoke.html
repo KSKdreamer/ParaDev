@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en" class="theme-light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <title>ParaDev Diagram Apply Review Smoke</title>
+    <style>
+      :root {
+        --panel: var(--surface);
+        --shadow-md: var(--shadow);
+      }
+
+      body {
+        overflow: hidden;
+      }
+
+      .diagram-apply-smoke {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 10px;
+        width: 100vw;
+        height: 100dvh;
+        padding: 16px;
+        background: var(--bg);
+      }
+
+      .diagram-apply-smoke-status {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+        border: 1px solid var(--border);
+        border-radius: var(--radius-medium);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+        padding: 8px 10px;
+        color: var(--text);
+        font-size: 12px;
+        line-height: 16px;
+      }
+
+      .diagram-apply-smoke-status strong {
+        margin-right: auto;
+        font-weight: 750;
+      }
+
+      .diagram-apply-smoke-status span {
+        border: 1px solid var(--border);
+        border-radius: var(--radius-small);
+        background: var(--surface-2);
+        padding: 2px 7px;
+        color: var(--muted);
+        font-weight: 650;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/e2e/diagram-apply-review-smoke.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,24 @@
+{
+  "schema": "paradev.release.project-package-catalog.v1",
+  "paradev_version": "0.1.0.000dev",
+  "desktop_version": "0.1.0-0",
+  "packages": [
+    {
+      "id": "pihc3-0.2.3",
+      "label": "PIHC3 0.2.3",
+      "game": "hoi4",
+      "archive_name": "PIHC3-0.2.3-project.zip",
+      "archive_sha256": "87c8f75834ca3b32bdf5124e924a3013d8948ebb189615eeba88ee42f65ef01d",
+      "archive_size": 1844557429,
+      "project_id": "PIHC3",
+      "project_version": "0.2.3",
+      "top_level_folder": "PIHC3-0.2.3",
+      "entry_count": 137566,
+      "file_count": 79690,
+      "directory_count": 57876,
+      "uncompressed_size": 2764159173,
+      "compressed_size": 1807896455,
+      "max_member_path_code_units": 199
+    }
+  ]
+}

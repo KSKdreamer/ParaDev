@@ -1,0 +1,45 @@
+name: Documentation
+description: Report missing, unclear, or incorrect documentation
+title: "[Docs] "
+labels:
+  - documentation
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for README, docs/, comments, examples, or other user-facing documentation.
+  - type: dropdown
+    id: doc_area
+    attributes:
+      label: Documentation area
+      options:
+        - README
+        - docs/
+        - API / code comments
+        - Examples / demos
+        - Agent or contributor docs
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: What needs to change?
+      description: What is missing, outdated, or confusing?
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: What should the docs say or link to instead?
+    validations:
+      required: false
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: File path, URL, or section name if known.
+      placeholder: docs/README.md
+    validations:
+      required: false

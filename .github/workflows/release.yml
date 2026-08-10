@@ -1,0 +1,197 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build distributions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/desktop/package-lock.json
+
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Install build tooling
+        run: uv pip install --system build twine
+
+      - name: Install desktop dependencies
+        run: npm ci --prefix apps/desktop
+
+      - name: Install locked development environment
+        run: uv sync --all-extras --frozen
+
+      - name: Verify generated metadata and code quality
+        shell: bash
+        run: |
+          bash scripts/sync-env.bash --check --no-heavenbase
+          bash scripts/flake.bash --ci
+
+      - name: Test Python and desktop behavior
+        shell: bash
+        run: |
+          bash scripts/test.bash
+          npm --prefix apps/desktop test
+
+      - name: Build verified wheel and source distribution
+        shell: bash
+        run: |
+          PROJECT_ROOT="${GITHUB_WORKSPACE}"
+          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          export SOURCE_DATE_EPOCH
+          cd "${RUNNER_TEMP}"
+          python -m build --sdist --outdir "${PROJECT_ROOT}/dist" "${PROJECT_ROOT}"
+          bash "${PROJECT_ROOT}/scripts/build-wheel.bash" --out-dir "${PROJECT_ROOT}/dist"
+          REPRO_DIR="${RUNNER_TEMP}/paradev-reproducible-wheel"
+          bash "${PROJECT_ROOT}/scripts/build-wheel.bash" --out-dir "${REPRO_DIR}"
+          PRIMARY_WHEEL="$(find "${PROJECT_ROOT}/dist" -maxdepth 1 -type f -name 'paradev-*.whl' -print -quit)"
+          REPRO_WHEEL="$(find "${REPRO_DIR}" -maxdepth 1 -type f -name 'paradev-*.whl' -print -quit)"
+          test -n "${PRIMARY_WHEEL}"
+          test -n "${REPRO_WHEEL}"
+          cmp "${PRIMARY_WHEEL}" "${REPRO_WHEEL}"
+
+      - name: Check distribution metadata
+        run: python -m twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paradev-dist
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 7
+
+  test-dist:
+    name: Test installed artifact (${{ matrix.os }})
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+          - windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: paradev-dist
+          path: dist
+
+      - name: Install built wheel
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install dist/*.whl
+
+      - name: Verify installed artifact
+        run: python -c "import paradev; print(paradev.__version__)"
+
+      - name: Verify CLI entry points
+        shell: bash
+        run: |
+          paradev --help
+          paradev dashboard --help
+          paradev-gui --help
+
+      - uses: astral-sh/setup-uv@v5
+        if: matrix.os == 'ubuntu-latest'
+        with:
+          enable-cache: true
+
+      - name: Smoke installed GUI host and build lifecycle
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          WHEEL="$(find dist -maxdepth 1 -type f -name 'paradev-*.whl' -print -quit)"
+          bash scripts/smoke-wheel-gui.bash \
+            --wheel "${WHEEL}" \
+            --project demos/assets/projects/minimal \
+            --copy-project \
+            --expect-project-id minimal_hoi4 \
+            --clean \
+            --cached \
+            --family focus \
+            --module focus/GER_sample
+
+      - name: Rebuild and smoke wheel from source distribution
+        if: matrix.os == 'ubuntu-latest'
+        shell: bash
+        run: |
+          mkdir -p dist/from-sdist
+          python -m pip wheel --no-deps --wheel-dir dist/from-sdist dist/paradev-*.tar.gz
+          SDIST_WHEEL="$(find dist/from-sdist -maxdepth 1 -type f -name 'paradev-*.whl' -print -quit)"
+          test -n "${SDIST_WHEEL}"
+          python scripts/verify_wheel_inventory.py \
+            --wheel "${SDIST_WHEEL}" \
+            --gui-root src/paradev/resources/gui \
+            --host-root apps/desktop/host \
+            --host-icon apps/desktop/host/icon.icns
+          bash scripts/smoke-wheel-gui.bash \
+            --wheel "${SDIST_WHEEL}" \
+            --project demos/assets/projects/minimal \
+            --copy-project \
+            --expect-project-id minimal_hoi4 \
+            --clean \
+            --cached \
+            --family focus \
+            --module focus/GER_sample
+
+      - name: Smoke installed macOS application lifecycle
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          WHEEL="$(find dist -maxdepth 1 -type f -name 'paradev-*.whl' -print -quit)"
+          bash scripts/smoke-macos-installed-app.bash \
+            --wheel "${WHEEL}" \
+            --python python \
+            --evidence dist/macos-installed-app-smoke.json
+
+      - uses: actions/upload-artifact@v4
+        if: matrix.os == 'macos-latest'
+        with:
+          name: paradev-macos-installed-app-smoke
+          path: dist/macos-installed-app-smoke.json
+          if-no-files-found: error
+          retention-days: 7
+
+  publish-pypi:
+    name: Publish to PyPI
+    needs: test-dist
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: paradev-dist
+          path: dist
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1

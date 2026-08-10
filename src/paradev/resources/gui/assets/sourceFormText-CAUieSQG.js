@@ -1,0 +1,1 @@
+function e(e,t){return typeof e==`string`?e:e[t]??e.default}export{e as t};

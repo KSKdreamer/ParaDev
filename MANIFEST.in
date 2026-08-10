@@ -1,0 +1,20 @@
+include pyproject.toml
+include README.md
+include README.en.md
+include README.zh.md
+include requirements.txt
+include requirements-dev.txt
+
+recursive-include src/paradev *.py *.pyi
+include src/paradev/resources/README.md
+recursive-include src/paradev/resources/gui *
+include src/paradev/resources/release/project-packages.json
+
+include apps/desktop/host/*.js
+include apps/desktop/host/icon.icns
+
+prune tests
+prune docs
+prune demos
+prune projects
+global-exclude __pycache__ *.py[cod] .DS_Store

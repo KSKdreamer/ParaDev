@@ -1,0 +1,8 @@
+# Source of truth for runtime dependencies. Edit here, then run bash scripts/sync-env.bash.
+heavenbase==0.1.2.2
+fastapi>=0.128.0
+pillow==12.3.0
+rich>=15.0.0
+typer>=0.26.0
+typing-extensions>=4.15.0
+uvicorn>=0.39.0

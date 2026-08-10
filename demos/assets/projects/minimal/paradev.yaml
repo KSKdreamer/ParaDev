@@ -1,0 +1,7 @@
+project_id: minimal_hoi4
+title: Minimal HOI4 Project
+game: hoi4
+source_roots:
+  - src
+output_root: build/mod
+build_root: .paradev/.cache/build

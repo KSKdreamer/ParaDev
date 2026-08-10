@@ -1,0 +1,84 @@
+"C01_Imperial_Royal_Airship_Manufacturing organization" = {
+    name = C01_airship_organization
+    icon = GFX_idea_generic_air_manufacturer_2
+    initial_trait = {
+        name = generic_mio_initial_trait_heavy_aircraft_designer
+    }
+    trait = {
+        token = shared_root_trait
+        name = shared_root_trait
+        icon = GFX_generic_mio_trait_icon_defense
+        position = {
+            x = 2
+            y = 0
+        }
+    }
+    trait = {
+        token = standardized_alloys_trait
+        name = standardized_alloys_trait
+        icon = GFX_generic_mio_trait_icon_resources
+        position = {
+            x = 0
+            y = 1
+        }
+        relative_position_id = shared_root_trait
+        any_parent = {
+            shared_root_trait
+        }
+        mutually_exclusive = {
+            quality_alloys_trait
+        }
+    }
+    trait = {
+        token = quality_alloys_trait
+        name = quality_alloys_trait
+        icon = GFX_generic_mio_trait_icon_air_agility
+        position = {
+            x = 2
+            y = 1
+        }
+        relative_position_id = shared_root_trait
+        all_parents = {
+            shared_root_trait
+            standardized_alloys_trait
+        }
+        mutually_exclusive = {
+            standardized_alloys_trait
+        }
+    }
+}
+
+generic_second_organization = {
+    icon = GFX_idea_generic_tank_manufacturer_1
+    initial_trait = {
+        name = generic_mio_initial_trait_standardized_production
+    }
+    trait = {
+        token = shared_root_trait
+        name = shared_root_trait
+        icon = GFX_generic_mio_trait_icon_reliability
+        position = {
+            x = 1
+            y = 0
+        }
+    }
+    trait = {
+        token = second_child_trait
+        name = second_child_trait
+        position = {
+            x = 0
+            y = 1
+        }
+        relative_position_id = shared_root_trait
+        any_parent = {
+            shared_root_trait
+        }
+    }
+}
+
+policy_record = {
+    icon = GFX_policy
+    allowed = {
+        always = yes
+    }
+}

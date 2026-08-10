@@ -1,0 +1,90 @@
+[project]
+name = "paradev"
+dynamic = ["version", "dependencies", "optional-dependencies"]
+authors = [{ name = "Magolor", email = "magolorcz@gmail.com" }]
+description = "ParaDev: a Paradox Interactive game mod development desktop app and SDK."
+readme = { file = "README.md", content-type = "text/markdown" }
+requires-python = ">=3.10,<3.14"
+keywords = ["paradev", "paradox", "modding", "sdk", "desktop", "webview", "python"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/PIHC-Team/ParaDev"
+Repository = "https://github.com/PIHC-Team/ParaDev"
+"Bug Tracker" = "https://github.com/PIHC-Team/ParaDev/issues"
+
+[project.scripts]
+paradev = "paradev.cli:main"
+
+[project.gui-scripts]
+paradev-gui = "paradev.gui:main"
+
+[build-system]
+requires = ["setuptools>=80.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools]
+include-package-data = false
+
+[tool.setuptools.package-data]
+paradev = [
+    "api/*.pyi",
+    "resources/README.md",
+    "resources/gui/*",
+    "resources/gui/assets/*",
+    "resources/release/project-packages.json",
+]
+
+[tool.setuptools.data-files]
+"share/paradev/gui/host" = [
+    "apps/desktop/host/*.js",
+    "apps/desktop/host/icon.icns",
+]
+
+[tool.setuptools.dynamic]
+version = { attr = "paradev.version.__version__" }
+dependencies = { file = ["requirements.txt"] }
+optional-dependencies.dev = { file = ["requirements-dev.txt"] }
+
+# [tool.poetry].version is synced from src/paradev/version.py by scripts/sync-env.py.
+[tool.poetry]
+version = "0.1.0.000dev"
+package-mode = true
+
+[tool.black]
+line-length = 160
+target-version = ["py310"]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra --strict-markers --disable-warnings"
+testpaths = ["tests"]
+norecursedirs = ["fixtures"]
+pythonpath = ["src"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "slow: Slow running tests excluded from the default scripts/test.bash fast gate",
+    "pihc3: Integration contract requiring the separately checked-out PIHC3 project",
+    "xdist_group(name): Keep related tests on one xdist worker when using loadgroup distribution",
+]
+asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning",
+]

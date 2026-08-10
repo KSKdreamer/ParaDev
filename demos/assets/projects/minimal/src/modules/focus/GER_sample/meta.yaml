@@ -1,0 +1,9 @@
+type: focus
+title: Sample Focus
+owner: GER
+tags: [sample]
+collection: GER_main
+requires:
+  - idea:GER_industrial_spirit
+after:
+  - focus:GER_rhineland

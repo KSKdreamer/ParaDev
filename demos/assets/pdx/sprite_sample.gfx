@@ -1,0 +1,13 @@
+spriteTypes = {
+	spriteType = {
+		name = "GFX_paradev_goal_sample"
+		texturefile = "gfx/interface/goals/paradev_goal_sample.dds"
+		effectFile = "gfx/FX/buttonstate.lua"
+		legacy_lazy_load = no
+	}
+	spriteType = {
+		name = "GFX_paradev_goal_sample_shine"
+		texturefile = "gfx/interface/goals/paradev_goal_sample_shine.dds"
+		allwaystransparent = yes
+	}
+}

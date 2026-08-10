@@ -1,0 +1,1 @@
+window.__PARADEV_RUNTIME_CONFIG__ = window.__PARADEV_RUNTIME_CONFIG__ || {};

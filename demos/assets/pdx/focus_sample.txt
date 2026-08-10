@@ -1,0 +1,20 @@
+# Representative HOI4 national focus snippet
+focus = {
+	id = GER_paradev_sample
+	icon = GFX_goal_generic_construct_civilian
+	cost = 10
+	available_if_capitulated = no
+	x = 4
+	y = 2
+	ai_will_do = {
+		factor = 1.25
+		modifier = {
+			factor > 0
+			has_war = yes
+		}
+	}
+	completion_reward = {
+		add_political_power = 120
+	}
+	tags = { GER industry early_game }
+}
