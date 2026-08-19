@@ -4762,7 +4762,13 @@ def build_app():
 
     @app.get("/projects")
     def project_open(path: str = ".", game: str | None = None, title: str | None = None) -> dict[str, object]:
-        return open_project(path, game=game, title=title).to_view()
+        try:
+            return open_project(path, game=game, title=title).to_view()
+        except (ProjectManifestError, OSError, ValueError) as error:
+            # A caller-supplied path that does not hold a project is a bad request, not a
+            # server fault. Answering 500 discards the message, which is the only thing a
+            # frontend can show the user when they typed or picked the wrong folder.
+            raise HTTPException(status_code=400, detail=str(error)) from error
 
     @app.post("/projects")
     def project_create(
