@@ -483,16 +483,23 @@ def desktop_select_project_path(*, platform: str | None = None) -> str | None:
             platform.
     """
 
-    selected = _macos_picker_path(
-        platform=platform,
-        capability="Project folder selection",
-        script='POSIX path of (choose folder with prompt "Open a ParaDev project")',
-    )
+    if _platform_id(platform) == "windows":
+        selected = _windows_picker_path(
+            capability="Project folder selection",
+            prompt="Open a ParaDev project",
+            kind="folder",
+        )
+    else:
+        selected = _macos_picker_path(
+            platform=platform,
+            capability="Project folder selection",
+            script='POSIX path of (choose folder with prompt "Open a ParaDev project")',
+        )
     if selected is None:
         return None
     selected_path = Path(selected).expanduser().resolve(strict=False)
     if not selected_path.is_dir():
-        raise RuntimeError(f"The macOS project folder picker returned a non-directory path: {selected or '<empty>'}")
+        raise RuntimeError(f"The project folder picker returned a non-directory path: {selected or '<empty>'}")
     return str(selected_path)
 
 
@@ -514,17 +521,156 @@ def desktop_select_project_package_path(*, platform: str | None = None) -> str |
             unsupported platform.
     """
 
-    selected = _macos_picker_path(
-        platform=platform,
-        capability="Project package selection",
-        script=('POSIX path of (choose file of type {"public.zip-archive"} ' 'with prompt "Install a ParaDev project package")'),
-    )
+    if _platform_id(platform) == "windows":
+        selected = _windows_picker_path(
+            capability="Project package selection",
+            prompt="Install a ParaDev project package",
+            kind="zip",
+        )
+    else:
+        selected = _macos_picker_path(
+            platform=platform,
+            capability="Project package selection",
+            script=('POSIX path of (choose file of type {"public.zip-archive"} ' 'with prompt "Install a ParaDev project package")'),
+        )
     if selected is None:
         return None
     selected_path = Path(selected).expanduser().resolve(strict=False)
     if not selected_path.is_file() or selected_path.suffix.casefold() != ".zip":
-        raise RuntimeError("The macOS project package picker returned a non-ZIP file path: " f"{selected or '<empty>'}")
+        raise RuntimeError("The project package picker returned a non-ZIP file path: " f"{selected or '<empty>'}")
     return str(selected_path)
+
+
+def _windows_picker_path(
+    *,
+    capability: str,
+    prompt: str,
+    kind: str,
+) -> str | None:
+    """Return one path from a native Win32 picker, sharing the cancellation policy.
+
+    Args:
+        capability: Human-readable capability name used in error messages.
+        prompt: Dialog title shown to the user.
+        kind: Either `"folder"` or `"zip"`.
+
+    Returns:
+        The selected path, or `None` when the user cancels.
+
+    Raises:
+        OSError: If the Win32 dialog libraries are unavailable.
+        RuntimeError: If the picker fails or returns an empty path.
+    """
+
+    import ctypes
+    from ctypes import wintypes
+
+    try:
+        shell32 = ctypes.WinDLL("shell32", use_last_error=True)
+        comdlg32 = ctypes.WinDLL("comdlg32", use_last_error=True)
+        ole32 = ctypes.WinDLL("ole32", use_last_error=True)
+    except OSError as error:  # pragma: no cover - only on a crippled Windows install
+        raise OSError(f"The Windows {capability.casefold()} picker is unavailable: {error}") from error
+
+    # The dialogs are modal and run on whichever worker thread serves the request,
+    # so OLE has to be initialised there. S_OK and S_FALSE both mean "usable".
+    ole32.OleInitialize.argtypes = [ctypes.c_void_p]
+    ole32.OleInitialize.restype = ctypes.c_long
+    initialized = ole32.OleInitialize(None) in (0, 1)
+    try:
+        if kind == "folder":
+            class BROWSEINFOW(ctypes.Structure):
+                _fields_ = [
+                    ("hwndOwner", wintypes.HWND),
+                    ("pidlRoot", ctypes.c_void_p),
+                    ("pszDisplayName", wintypes.LPWSTR),
+                    ("lpszTitle", wintypes.LPCWSTR),
+                    ("ulFlags", wintypes.UINT),
+                    ("lpfn", ctypes.c_void_p),
+                    ("lParam", wintypes.LPARAM),
+                    ("iImage", ctypes.c_int),
+                ]
+
+            bi = BROWSEINFOW()
+            bi.lpszTitle = prompt
+            # RETURNONLYFSDIRS | NEWDIALOGSTYLE: a real filesystem directory, modern dialog.
+            bi.ulFlags = 0x00000001 | 0x00000040
+            display = ctypes.create_unicode_buffer(260)
+            bi.pszDisplayName = ctypes.cast(display, wintypes.LPWSTR)
+
+            shell32.SHBrowseForFolderW.argtypes = [ctypes.POINTER(BROWSEINFOW)]
+            shell32.SHBrowseForFolderW.restype = ctypes.c_void_p
+            pidl = shell32.SHBrowseForFolderW(ctypes.byref(bi))
+            if not pidl:
+                return None
+            try:
+                buffer = ctypes.create_unicode_buffer(32768)
+                shell32.SHGetPathFromIDListW.argtypes = [ctypes.c_void_p, wintypes.LPWSTR]
+                shell32.SHGetPathFromIDListW.restype = wintypes.BOOL
+                if not shell32.SHGetPathFromIDListW(ctypes.c_void_p(pidl), buffer):
+                    raise RuntimeError(f"The Windows {capability.casefold()} picker returned an unresolvable folder.")
+                selected = buffer.value
+            finally:
+                ole32.CoTaskMemFree.argtypes = [ctypes.c_void_p]
+                ole32.CoTaskMemFree(ctypes.c_void_p(pidl))
+        elif kind == "zip":
+            class OPENFILENAMEW(ctypes.Structure):
+                _fields_ = [
+                    ("lStructSize", wintypes.DWORD),
+                    ("hwndOwner", wintypes.HWND),
+                    ("hInstance", wintypes.HINSTANCE),
+                    ("lpstrFilter", wintypes.LPCWSTR),
+                    ("lpstrCustomFilter", wintypes.LPWSTR),
+                    ("nMaxCustFilter", wintypes.DWORD),
+                    ("nFilterIndex", wintypes.DWORD),
+                    ("lpstrFile", wintypes.LPWSTR),
+                    ("nMaxFile", wintypes.DWORD),
+                    ("lpstrFileTitle", wintypes.LPWSTR),
+                    ("nMaxFileTitle", wintypes.DWORD),
+                    ("lpstrInitialDir", wintypes.LPCWSTR),
+                    ("lpstrTitle", wintypes.LPCWSTR),
+                    ("Flags", wintypes.DWORD),
+                    ("nFileOffset", wintypes.WORD),
+                    ("nFileExtension", wintypes.WORD),
+                    ("lpstrDefExt", wintypes.LPCWSTR),
+                    ("lCustData", wintypes.LPARAM),
+                    ("lpfnHook", ctypes.c_void_p),
+                    ("lpTemplateName", wintypes.LPCWSTR),
+                    ("pvReserved", ctypes.c_void_p),
+                    ("dwReserved", wintypes.DWORD),
+                    ("FlagsEx", wintypes.DWORD),
+                ]
+
+            buffer = ctypes.create_unicode_buffer(32768)
+            ofn = OPENFILENAMEW()
+            ofn.lStructSize = ctypes.sizeof(OPENFILENAMEW)
+            ofn.lpstrFilter = "ParaDev project package (*.zip)\0*.zip\0"
+            ofn.lpstrFile = ctypes.cast(buffer, wintypes.LPWSTR)
+            ofn.nMaxFile = 32768
+            ofn.lpstrTitle = prompt
+            ofn.lpstrDefExt = "zip"
+            # PATHMUSTEXIST | FILEMUSTEXIST | NOCHANGEDIR | EXPLORER
+            ofn.Flags = 0x00000800 | 0x00001000 | 0x00000008 | 0x00080000
+
+            comdlg32.GetOpenFileNameW.argtypes = [ctypes.POINTER(OPENFILENAMEW)]
+            comdlg32.GetOpenFileNameW.restype = wintypes.BOOL
+            if not comdlg32.GetOpenFileNameW(ctypes.byref(ofn)):
+                # CommDlgExtendedError returns 0 when the user simply cancelled.
+                comdlg32.CommDlgExtendedError.restype = wintypes.DWORD
+                code = comdlg32.CommDlgExtendedError()
+                if code == 0:
+                    return None
+                raise RuntimeError(f"The Windows {capability.casefold()} picker failed: CommDlgExtendedError 0x{code:04X}")
+            selected = buffer.value
+        else:  # pragma: no cover - guarded by the callers
+            raise RuntimeError(f"Unknown Windows picker kind: {kind!r}")
+    finally:
+        if initialized:
+            ole32.OleUninitialize()
+
+    if not selected:
+        raise RuntimeError(f"The Windows {capability.casefold()} picker returned an empty path.")
+    return selected
 
 
 def _macos_picker_path(
