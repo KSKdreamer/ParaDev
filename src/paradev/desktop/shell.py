@@ -566,7 +566,6 @@ def _windows_picker_path(
     from ctypes import wintypes
 
     try:
-        shell32 = ctypes.WinDLL("shell32", use_last_error=True)
         comdlg32 = ctypes.WinDLL("comdlg32", use_last_error=True)
         ole32 = ctypes.WinDLL("ole32", use_last_error=True)
     except OSError as error:  # pragma: no cover - only on a crippled Windows install
@@ -579,43 +578,97 @@ def _windows_picker_path(
     initialized = ole32.OleInitialize(None) in (0, 1)
     try:
         if kind == "folder":
-            class BROWSEINFOW(ctypes.Structure):
+            # IFileOpenDialog with FOS_PICKFOLDERS: the Explorer-style dialog, whose address
+            # bar accepts a pasted path. SHBrowseForFolderW was tried first and rejected --
+            # it is a tree, so a hidden folder anywhere along the path makes the target
+            # unreachable, and a project path is usually deep enough that clicking down to
+            # it is impractical. (BIF_EDITBOX does add a typed-path field there, but it does
+            # not solve the hidden-folder case.)
+            #
+            # The vtable offsets below are hand-written. That is safe by COM contract: an
+            # interface's method order is frozen once published, which is what lets compiled
+            # callers keep working across Windows versions.
+            class GUID(ctypes.Structure):
                 _fields_ = [
-                    ("hwndOwner", wintypes.HWND),
-                    ("pidlRoot", ctypes.c_void_p),
-                    ("pszDisplayName", wintypes.LPWSTR),
-                    ("lpszTitle", wintypes.LPCWSTR),
-                    ("ulFlags", wintypes.UINT),
-                    ("lpfn", ctypes.c_void_p),
-                    ("lParam", wintypes.LPARAM),
-                    ("iImage", ctypes.c_int),
+                    ("Data1", ctypes.c_uint32),
+                    ("Data2", ctypes.c_uint16),
+                    ("Data3", ctypes.c_uint16),
+                    ("Data4", ctypes.c_ubyte * 8),
                 ]
 
-            bi = BROWSEINFOW()
-            bi.lpszTitle = prompt
-            # RETURNONLYFSDIRS | EDITBOX | NEWDIALOGSTYLE: a real filesystem directory, a
-            # typed-path field, and the resizable dialog. The edit box matters -- without it
-            # a deep project path can only be reached by clicking down the tree, and a user
-            # who already has the path in hand has no way to enter it.
-            bi.ulFlags = 0x00000001 | 0x00000010 | 0x00000040
-            display = ctypes.create_unicode_buffer(260)
-            bi.pszDisplayName = ctypes.cast(display, wintypes.LPWSTR)
+                def __init__(self, d1: int, d2: int, d3: int, rest: bytes) -> None:
+                    super().__init__(d1, d2, d3, (ctypes.c_ubyte * 8)(*rest))
 
-            shell32.SHBrowseForFolderW.argtypes = [ctypes.POINTER(BROWSEINFOW)]
-            shell32.SHBrowseForFolderW.restype = ctypes.c_void_p
-            pidl = shell32.SHBrowseForFolderW(ctypes.byref(bi))
-            if not pidl:
-                return None
+            CLSID_FileOpenDialog = GUID(0xDC1C5A9C, 0xE88A, 0x4DDE, b"\xa5\xa1\x60\xf8\x2a\x20\xae\xf7")
+            IID_IFileOpenDialog = GUID(0xD57C7288, 0xD4AD, 0x4768, b"\xbe\x02\x9d\x96\x95\x32\xd9\x60")
+
+            ole32.CoCreateInstance.argtypes = [
+                ctypes.POINTER(GUID),
+                ctypes.c_void_p,
+                ctypes.c_uint32,
+                ctypes.POINTER(GUID),
+                ctypes.POINTER(ctypes.c_void_p),
+            ]
+            ole32.CoCreateInstance.restype = ctypes.c_long
+
+            dialog = ctypes.c_void_p()
+            hr = ole32.CoCreateInstance(
+                ctypes.byref(CLSID_FileOpenDialog),
+                None,
+                0x1 | 0x4,  # CLSCTX_INPROC_SERVER | CLSCTX_LOCAL_SERVER
+                ctypes.byref(IID_IFileOpenDialog),
+                ctypes.byref(dialog),
+            )
+            if hr < 0:
+                raise RuntimeError(f"The Windows {capability.casefold()} picker could not be created: HRESULT 0x{hr & 0xFFFFFFFF:08X}")
+
+            vtable = ctypes.cast(dialog, ctypes.POINTER(ctypes.POINTER(ctypes.c_void_p))).contents
+
+            def method(index: int, restype: object, *argtypes: object):
+                proto = ctypes.WINFUNCTYPE(restype, ctypes.c_void_p, *argtypes)
+                return proto(vtable[index])
+
+            # IFileOpenDialog vtable: IUnknown 0-2, IFileDialog 3-, IModalWindow::Show at 3.
+            release = method(2, ctypes.c_ulong)
+            show = method(3, ctypes.c_long, ctypes.c_void_p)
+            set_options = method(9, ctypes.c_long, ctypes.c_uint32)
+            get_options = method(10, ctypes.c_long, ctypes.POINTER(ctypes.c_uint32))
+            set_title = method(17, ctypes.c_long, ctypes.c_wchar_p)
+            get_result = method(20, ctypes.c_long, ctypes.POINTER(ctypes.c_void_p))
+
             try:
-                buffer = ctypes.create_unicode_buffer(32768)
-                shell32.SHGetPathFromIDListW.argtypes = [ctypes.c_void_p, wintypes.LPWSTR]
-                shell32.SHGetPathFromIDListW.restype = wintypes.BOOL
-                if not shell32.SHGetPathFromIDListW(ctypes.c_void_p(pidl), buffer):
-                    raise RuntimeError(f"The Windows {capability.casefold()} picker returned an unresolvable folder.")
-                selected = buffer.value
+                options = ctypes.c_uint32()
+                if get_options(dialog, ctypes.byref(options)) < 0:
+                    raise RuntimeError(f"The Windows {capability.casefold()} picker could not be configured.")
+                # FOS_PICKFOLDERS | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST
+                set_options(dialog, options.value | 0x20 | 0x40 | 0x800)
+                set_title(dialog, prompt)
+
+                hr = show(dialog, None)
+                if hr == -2147023673:  # HRESULT_FROM_WIN32(ERROR_CANCELLED)
+                    return None
+                if hr < 0:
+                    raise RuntimeError(f"The Windows {capability.casefold()} picker failed: HRESULT 0x{hr & 0xFFFFFFFF:08X}")
+
+                item = ctypes.c_void_p()
+                if get_result(dialog, ctypes.byref(item)) < 0 or not item:
+                    raise RuntimeError(f"The Windows {capability.casefold()} picker returned no selection.")
+                item_vtable = ctypes.cast(item, ctypes.POINTER(ctypes.POINTER(ctypes.c_void_p))).contents
+                item_release = ctypes.WINFUNCTYPE(ctypes.c_ulong, ctypes.c_void_p)(item_vtable[2])
+                get_display_name = ctypes.WINFUNCTYPE(
+                    ctypes.c_long, ctypes.c_void_p, ctypes.c_uint32, ctypes.POINTER(ctypes.c_wchar_p)
+                )(item_vtable[5])
+                try:
+                    name = ctypes.c_wchar_p()
+                    if get_display_name(item, 0x80058000, ctypes.byref(name)) < 0:  # SIGDN_FILESYSPATH
+                        raise RuntimeError(f"The Windows {capability.casefold()} picker returned an unresolvable folder.")
+                    selected = name.value or ""
+                    ole32.CoTaskMemFree.argtypes = [ctypes.c_void_p]
+                    ole32.CoTaskMemFree(ctypes.cast(name, ctypes.c_void_p))
+                finally:
+                    item_release(item)
             finally:
-                ole32.CoTaskMemFree.argtypes = [ctypes.c_void_p]
-                ole32.CoTaskMemFree(ctypes.c_void_p(pidl))
+                release(dialog)
         elif kind == "zip":
             class OPENFILENAMEW(ctypes.Structure):
                 _fields_ = [
