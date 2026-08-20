@@ -593,8 +593,11 @@ def _windows_picker_path(
 
             bi = BROWSEINFOW()
             bi.lpszTitle = prompt
-            # RETURNONLYFSDIRS | NEWDIALOGSTYLE: a real filesystem directory, modern dialog.
-            bi.ulFlags = 0x00000001 | 0x00000040
+            # RETURNONLYFSDIRS | EDITBOX | NEWDIALOGSTYLE: a real filesystem directory, a
+            # typed-path field, and the resizable dialog. The edit box matters -- without it
+            # a deep project path can only be reached by clicking down the tree, and a user
+            # who already has the path in hand has no way to enter it.
+            bi.ulFlags = 0x00000001 | 0x00000010 | 0x00000040
             display = ctypes.create_unicode_buffer(260)
             bi.pszDisplayName = ctypes.cast(display, wintypes.LPWSTR)
 
