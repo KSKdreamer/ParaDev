@@ -4840,7 +4840,13 @@ def build_app():
         source_root: str | None = None,
         encoding: str = "utf-8",
     ) -> dict[str, object]:
-        return open_project(path).read_module_file(module_id, relative_path, source_root=source_root, encoding=encoding)
+        try:
+            return open_project(path).read_module_file(module_id, relative_path, source_root=source_root, encoding=encoding)
+        except (ProjectManifestError, OSError, ValueError) as error:
+            # An unknown module or a missing file is a bad request, not a server fault.
+            # A 500 discards "Unknown module: <id>.", which is the only thing the GUI has
+            # to show when it asks for something that is no longer there.
+            raise HTTPException(status_code=400, detail=str(error)) from error
 
     @app.patch("/projects/modules/file")
     def module_edit(
